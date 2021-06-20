@@ -1,5 +1,6 @@
 const axios = require("axios");
 const chartistSvg = require("svg-chartist");
+const path = require("path");
 const fs = require("fs");
 
 const HTTPClient = axios.create({
@@ -91,9 +92,25 @@ const makeChart = (percentages, name) => {
     options: options,
   };
 
+  let fileName = `./charts/${name}.html`
+  upsertFile(fileName)
   chartistSvg("bar", data, opts).then((html) => {
-    fs.writeFileSync(`./charts/${name}.html`, html);
+    fs.writeFileSync(fileName, html);
   });
+}
+
+const upsertFile = async (name) => {
+  try {
+    await fs.promises.readFile(name);
+  } catch (error) {
+    const dirname = path.dirname(name);
+    console.log(dirname)
+    const exist = await isExists(dirname);
+    if (!exist) {
+      await fs.mkdir(dirname, { recursive: true });
+    }
+    await fs.promises.writeFile(name, "");
+  }
 }
 
 const getMaxScore = (winners) => {
@@ -102,15 +119,7 @@ const getMaxScore = (winners) => {
       max = max < parseFloat(property) ? parseFloat(property) : max;
     }
     return max
-  }
-
-const getMaxScore = (winners) => {
-    var max = 0;
-    for (var property in winners) {
-      max = max < parseFloat(property) ? parseFloat(property) : max;
-    }
-    return max
-  }
+}
 
 const calculatePercentages = (winners, losers, max) => {
     percentages = {}
@@ -127,10 +136,12 @@ const calculatePercentages = (winners, losers, max) => {
 async function generateStats(year) {
   try {
     const seasonsGames = await getGames({ year: year});
-    for (const game of seasonsGames) {
-      let playByPlay = await getPlayByPlay(game)
-      accumulateStats(playByPlay, game)
-    }
+    // for (const game of seasonsGames) {
+    //   let playByPlay = await getPlayByPlay(game)
+    //   accumulateStats(playByPlay, game)
+    // }
+    let playByPlay = await getPlayByPlay(seasonsGames[0])
+    accumulateStats(playByPlay, seasonsGames[0])
     let max = getMaxScore(winnerReachedFirst)
     let percentages = calculatePercentages(winnerReachedFirst, loserReachedFirst, max)
     makeChart(percentages, year)

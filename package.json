@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "axios": "^0.21.1",
+    "svg-chartist": "^1.0.1"
+  }
+}
